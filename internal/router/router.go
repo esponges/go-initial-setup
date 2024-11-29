@@ -1,12 +1,14 @@
 package router
 
 import (
+	configuration "github.com/esponges/initial-setup/internal"
 	"github.com/esponges/initial-setup/internal/handlers"
 	"github.com/gorilla/mux"
 )
 
 type Application struct {
-	Router *mux.Router
+	Router        *mux.Router
+	Configuration configuration.Configuration
 }
 
 func NewRoutes(r *mux.Router) *mux.Router {
@@ -23,6 +25,7 @@ func SetupRouter() Application {
 	NewRoutes(r)
 
 	return Application{
-		Router: r,
+		Router:        r,
+		Configuration: *configuration.NewConfiguration(),
 	}
 }

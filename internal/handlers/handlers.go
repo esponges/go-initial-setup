@@ -5,6 +5,10 @@ import (
 	"net/http"
 )
 
+type Handler struct {
+	HealthCheckHandler func(w http.ResponseWriter, r *http.Request)
+}
+
 func HomeHandler(w http.ResponseWriter, r *http.Request) {
 	fmt.Fprintf(w, "Welcome to My Project!")
 }

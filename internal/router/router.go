@@ -5,12 +5,24 @@ import (
 	"github.com/gorilla/mux"
 )
 
-func SetupRouter() *mux.Router {
-	r := mux.NewRouter()
+type Application struct {
+	Router *mux.Router
+}
 
+func NewRoutes(r *mux.Router) *mux.Router {
 	// Example routes
 	r.HandleFunc("/", handlers.HomeHandler).Methods("GET")
 	r.HandleFunc("/health", handlers.HealthCheckHandler).Methods("GET")
 
 	return r
+}
+
+func SetupRouter() Application {
+	r := mux.NewRouter()
+
+	NewRoutes(r)
+
+	return Application{
+		Router: r,
+	}
 }

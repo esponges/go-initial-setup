@@ -3,6 +3,7 @@ package router
 import (
 	"log"
 	"net/http"
+	"time"
 
 	gorillaHandlers "github.com/gorilla/handlers"
 	"github.com/gorilla/mux"
@@ -28,10 +29,22 @@ func (app *Application) Run(router *mux.Router) {
 	}
 
 	log.Println("listen and serve!")
-	err := server.ListenAndServe()
-	if err != nil {
-		log.Println(err.Error())
-	}
+	errChan := make(chan error)
+	go func() {
+		errChan <- server.ListenAndServe()
+	}()
+
+	// The main go routine has exited by now
+	// we need to start a new go routine to add logs after starting the server
+	go func() {
+		for {
+			log.Println("Server is running...")
+			time.Sleep(10 * time.Second)
+		}
+	}()
+
+	err := <-errChan
+	log.Println(err.Error())
 }
 
 func NewRoutes(r *mux.Router) *mux.Router {

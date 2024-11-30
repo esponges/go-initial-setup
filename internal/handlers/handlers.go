@@ -2,7 +2,9 @@ package handlers
 
 import (
 	"fmt"
+	"log"
 	"net/http"
+	"time"
 )
 
 type Handler struct {
@@ -10,6 +12,7 @@ type Handler struct {
 }
 
 func HomeHandler(w http.ResponseWriter, r *http.Request) {
+	log.Println(time.Now().Date())
 	fmt.Fprintf(w, "Welcome to My Project!")
 }
 

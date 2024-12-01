@@ -9,6 +9,7 @@ import (
 	"github.com/gorilla/mux"
 
 	configuration "github.com/esponges/initial-setup/internal"
+	common_validator "github.com/esponges/initial-setup/internal/common/middleware"
 	"github.com/esponges/initial-setup/internal/handlers"
 )
 
@@ -51,6 +52,10 @@ func NewRoutes(r *mux.Router) *mux.Router {
 	// Example routes
 	r.HandleFunc("/", handlers.HomeHandler).Methods("GET")
 	r.HandleFunc("/health", handlers.HealthCheckHandler).Methods("GET")
+
+	// Middleware
+	headersValidator := &common_validator.CommonValidator{}
+	r.Use(headersValidator.Validate)
 
 	return r
 }

@@ -3,8 +3,6 @@ package main
 import (
 	"log"
 
-	// "net/http"
-
 	"github.com/esponges/initial-setup/internal/router"
 )
 

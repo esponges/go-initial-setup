@@ -21,8 +21,6 @@ type Application struct {
 func (app *Application) Run(router *mux.Router) {
 	methodsOk := gorillaHandlers.AllowedMethods([]string{"GET"})
 
-	log.Println(app.Router)
-	log.Println(router)
 	log.Println("starting server")
 	server := &http.Server{
 		Addr:    ":" + app.Configuration.Port,
@@ -48,7 +46,7 @@ func (app *Application) Run(router *mux.Router) {
 	log.Println(err.Error())
 }
 
-func NewRoutes(r *mux.Router) *mux.Router {
+func NewRoutes(r *mux.Router) {
 	// Example routes
 	r.HandleFunc("/", handlers.HomeHandler).Methods("GET")
 	r.HandleFunc("/health", handlers.HealthCheckHandler).Methods("GET")
@@ -56,8 +54,6 @@ func NewRoutes(r *mux.Router) *mux.Router {
 	// Middleware
 	headersValidator := &common_validator.CommonValidator{}
 	r.Use(headersValidator.Validate)
-
-	return r
 }
 
 func SetupRouter() Application {

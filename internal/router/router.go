@@ -8,10 +8,11 @@ import (
 	"github.com/esponges/initial-setup/internal/handlers"
 )
 
-func NewRoutes(r *mux.Router) {
+func NewRoutes(r *mux.Router, config *internal.Configuration) {
 	// Example routes
 	r.HandleFunc("/", handlers.HomeHandler).Methods("GET")
 	r.HandleFunc("/health", handlers.HealthCheckHandler).Methods("GET")
+	r.HandleFunc("/sample_post_request", config.API.SamplePostRequestHandler.SamplePostRequestHandler).Methods("POST")
 
 	// Middleware
 	headersValidator := &common_validator.CommonValidator{}
@@ -21,10 +22,12 @@ func NewRoutes(r *mux.Router) {
 func SetupRouter() internal.Application {
 	r := mux.NewRouter()
 
-	NewRoutes(r)
+	config := internal.NewConfiguration()
+
+	NewRoutes(r, config)
 
 	return internal.Application{
 		Router:        r,
-		Configuration: *internal.NewConfiguration(),
+		Configuration: *config,
 	}
 }

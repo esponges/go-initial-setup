@@ -6,6 +6,8 @@ import (
 	"net/http"
 	"time"
 
+	"github.com/esponges/initial-setup/internal/common"
+	"github.com/esponges/initial-setup/internal/handlers/sample_post_request"
 	"github.com/go-playground/validator/v10"
 )
 
@@ -25,19 +27,26 @@ func HealthCheckHandler(w http.ResponseWriter, r *http.Request) {
 	w.Write([]byte("OK"))
 }
 
-type SamplePostRequestHandler struct {
+type SamplePostRequestHandlerImpl struct {
 	validator *validator.Validate
 }
 
-func NewSamplePostRequestHandler(validator *validator.Validate) *SamplePostRequestHandler {
-	return &SamplePostRequestHandler{
+func NewSamplePostRequestHandler(validator *validator.Validate) *SamplePostRequestHandlerImpl {
+	return &SamplePostRequestHandlerImpl{
 		validator: validator,
 	}
 }
 
-func (s *SamplePostRequestHandler) samplePostRequestHandler(w http.ResponseWriter, r *http.Request) {
+func (s *SamplePostRequestHandlerImpl) SamplePostRequestHandler(w http.ResponseWriter, r *http.Request) {
 	// todo: impl validation
+	var req sample_post_request.SamplePostRequest
+	body, err := common.UnmarshalAndValidateRequest(r, &req, s.validator)
+	if err != nil {
+		w.WriteHeader(http.StatusBadRequest)
+		w.Write([]byte("Bad Request"))
+	} else {
+		w.WriteHeader(http.StatusOK)
+		w.Write(body)
+	}
 
-	w.WriteHeader(http.StatusOK)
-	w.Write([]byte("OK"))
 }

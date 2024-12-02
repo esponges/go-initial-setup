@@ -11,7 +11,7 @@ type Configuration struct {
 }
 
 type API struct {
-	samplePostRequestHandler handlers.SamplePostRequestHandler
+	SamplePostRequestHandler handlers.SamplePostRequestHandlerImpl
 }
 
 func NewConfiguration() *Configuration {
@@ -24,7 +24,7 @@ func NewConfiguration() *Configuration {
 	return &Configuration{
 		Port: "8080",
 		API: API{
-			samplePostRequestHandler: *samplePostRequestHandler,
+			SamplePostRequestHandler: *samplePostRequestHandler,
 		},
 	}
 }

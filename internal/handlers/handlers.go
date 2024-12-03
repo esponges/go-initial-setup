@@ -45,6 +45,7 @@ func (s *SamplePostRequestHandlerImpl) SamplePostRequestHandler(w http.ResponseW
 		w.WriteHeader(http.StatusBadRequest)
 		w.Write([]byte("Bad Request"))
 	} else {
+		log.Println("Correct Request")
 		w.WriteHeader(http.StatusOK)
 		w.Write(body)
 	}

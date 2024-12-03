@@ -1,12 +1,25 @@
 package sample_post_request
 
 import (
+	"encoding/json"
+	"os"
 	"testing"
 
 	"github.com/go-playground/validator/v10"
 )
 
 func TestSamplePostRequestValidate(t *testing.T) {
+	jsonData, err := os.ReadFile("./test_data/invalid_request.json")
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	var req SamplePostRequest
+	err = json.Unmarshal(jsonData, &req)
+	if err != nil {
+		t.Fatal(err)
+	}
+
 	tests := []struct {
 		name string
 		req  SamplePostRequest
@@ -24,6 +37,11 @@ func TestSamplePostRequestValidate(t *testing.T) {
 			req: SamplePostRequest{
 				Name: "",
 			},
+			want: false,
+		},
+		{
+			name: "invalid name",
+			req:  req,
 			want: false,
 		},
 	}

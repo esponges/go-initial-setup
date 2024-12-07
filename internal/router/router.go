@@ -13,6 +13,7 @@ func NewRoutes(r *mux.Router, config *internal.Configuration) {
 	r.HandleFunc("/", handlers.HomeHandler).Methods("GET")
 	r.HandleFunc("/health", handlers.HealthCheckHandler).Methods("GET")
 	r.HandleFunc("/sample_post_request", config.API.SamplePostRequestHandler.SamplePostRequestHandler).Methods("POST")
+	r.HandleFunc("/create_singers", config.API.CreateSingersHandler.CreateSingersHandler).Methods("POST")
 
 	// Middleware
 	headersValidator := &common_validator.CommonValidator{}

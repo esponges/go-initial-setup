@@ -7,6 +7,7 @@ import (
 	"time"
 
 	"github.com/esponges/initial-setup/internal/common"
+	"github.com/esponges/initial-setup/internal/handlers/create_singers_handler"
 	"github.com/esponges/initial-setup/internal/handlers/sample_post_request"
 	"github.com/go-playground/validator/v10"
 )
@@ -49,5 +50,28 @@ func (s *SamplePostRequestHandlerImpl) SamplePostRequestHandler(w http.ResponseW
 		w.WriteHeader(http.StatusOK)
 		w.Write(body)
 	}
+}
 
+type CreateSingersHandlerImpl struct {
+	validator *validator.Validate
+}
+
+func NewCreateSingersHandler(validator *validator.Validate) *CreateSingersHandlerImpl {
+	return &CreateSingersHandlerImpl{
+		validator: validator,
+	}
+}
+
+func (c *CreateSingersHandlerImpl) CreateSingersHandler(w http.ResponseWriter, r *http.Request) {
+	var req create_singers_handler.CreateSingersRequest
+	body, err := common.UnmarshalAndValidateRequest(r, &req, c.validator)
+	log.Println("body: " + string(body))
+	if err != nil {
+		w.WriteHeader(http.StatusBadRequest)
+		w.Write([]byte("Bad Request"))
+	} else {
+		log.Println("Correct Request")
+		w.WriteHeader(http.StatusOK)
+		w.Write(body)
+	}
 }

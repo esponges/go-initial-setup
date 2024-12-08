@@ -42,7 +42,6 @@ func NewSamplePostRequestHandler(validator *validator.Validate) *SamplePostReque
 }
 
 func (s *SamplePostRequestHandlerImpl) SamplePostRequestHandler(w http.ResponseWriter, r *http.Request) {
-	// todo: impl validation
 	var req sample_post_request.SamplePostRequest
 	body, err := common.UnmarshalAndValidateRequest(r, &req, s.validator)
 	if err != nil {
@@ -56,12 +55,24 @@ func (s *SamplePostRequestHandlerImpl) SamplePostRequestHandler(w http.ResponseW
 }
 
 type CreateSingersHandlerImpl struct {
-	validator *validator.Validate
+	validator     *validator.Validate
+	spannerClient *spanner.Client
+	ctx           context.Context
 }
 
 func NewCreateSingersHandler(validator *validator.Validate) *CreateSingersHandlerImpl {
+	ctx := context.Background()
+
+	client, err := spanner.NewClient(ctx, os.Getenv("SPANNER_DB"))
+	if err != nil {
+		log.Fatal(err)
+	}
+	defer client.Close()
+
 	return &CreateSingersHandlerImpl{
-		validator: validator,
+		validator:     validator,
+		spannerClient: client,
+		ctx:           ctx,
 	}
 }
 
@@ -75,14 +86,7 @@ func (c *CreateSingersHandlerImpl) CreateSingersHandler(w http.ResponseWriter, r
 	} else {
 		log.Println("Correct Request")
 
-		ctx := context.Background()
-		client, err := spanner.NewClient(ctx, os.Getenv("SPANNER_DB"))
-		if err != nil {
-			log.Fatal(err)
-		}
-		defer client.Close()
-
-		_, err = client.ReadWriteTransaction(ctx, func(ctx context.Context, txn *spanner.ReadWriteTransaction) error {
+		_, err = c.spannerClient.ReadWriteTransaction(c.ctx, func(ctx context.Context, txn *spanner.ReadWriteTransaction) error {
 			// sql := "INSERT Singers (SingerId, FirstName, LastName) VALUES (:singerId, :firstName, :lastName)"
 
 			// none of these work

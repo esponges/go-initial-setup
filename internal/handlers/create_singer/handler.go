@@ -1,4 +1,4 @@
-package create_singer_handler
+package create_singer
 
 import (
 	"context"

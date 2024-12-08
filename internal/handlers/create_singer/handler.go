@@ -25,7 +25,6 @@ func NewCreateSingersHandler(validator *validator.Validate) *CreateSingersHandle
 	if err != nil {
 		log.Fatal(err)
 	}
-	defer client.Close()
 
 	return &CreateSingersHandlerImpl{
 		validator:     validator,
@@ -37,7 +36,6 @@ func NewCreateSingersHandler(validator *validator.Validate) *CreateSingersHandle
 func (c *CreateSingersHandlerImpl) CreateSingersHandler(w http.ResponseWriter, r *http.Request) {
 	var req CreateSingersRequest
 	body, err := common.UnmarshalAndValidateRequest(r, &req, c.validator)
-	log.Println("body: " + string(body))
 	if err != nil {
 		w.WriteHeader(http.StatusBadRequest)
 		w.Write([]byte("Bad Request"))
@@ -45,41 +43,16 @@ func (c *CreateSingersHandlerImpl) CreateSingersHandler(w http.ResponseWriter, r
 		log.Println("Correct Request")
 
 		_, err = c.spannerClient.ReadWriteTransaction(c.ctx, func(ctx context.Context, txn *spanner.ReadWriteTransaction) error {
-			// sql := "INSERT Singers (SingerId, FirstName, LastName) VALUES (:singerId, :firstName, :lastName)"
+			cols := []string{"SingerId", "FirstName", "LastName"}
+			err = txn.BufferWrite([]*spanner.Mutation{
+				spanner.InsertOrUpdate("Singers", cols, []interface{}{req.SingerId, req.Name, req.LastName}),
+			})
 
-			// none of these work
-			// stmt := spanner.Statement{
-			// 	SQL: sql,
-			// 	Params: map[string]interface{}{
-			// 		"singerId":  "13",
-			// 		"firstName": "foo",
-			// 		"lastName":  "bar",
-			// 	},
-			// }
-			log.Println(string(req.Name), string(req.LastName))
-
-			sql := fmt.Sprintf("INSERT Singers (SingerId, FirstName, LastName) VALUES ('%s', '%s', '%s')",
-				req.SingerId, req.Name, req.LastName)
-
-			stmt := spanner.Statement{
-				SQL: sql,
-			}
-
-			// this sample code works
-			// stmt := spanner.Statement{
-			// 	SQL: `INSERT Singers (SingerId, FirstName, LastName) VALUES
-			// 		(12, 'Melissa', 'Garcia'),
-			// 		(13, 'Russell', 'Morales'),
-			// 		(14, 'Jacqueline', 'Long'),
-			// 		(15, 'Dylan', 'Shaw')`,
-			// }
-
-			rowCount, err := txn.Update(ctx, stmt)
 			if err != nil {
 				log.Fatal(err)
 			}
 
-			fmt.Printf("%d rows inserted.\n", rowCount)
+			fmt.Printf("Successfully upserted singer: %s\n", req.Name+" "+req.LastName)
 			return nil
 		})
 

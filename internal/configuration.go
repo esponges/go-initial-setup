@@ -2,6 +2,7 @@ package internal
 
 import (
 	"github.com/esponges/initial-setup/internal/handlers"
+	"github.com/esponges/initial-setup/internal/handlers/create_singer_handler"
 	"github.com/go-playground/validator/v10"
 )
 
@@ -12,7 +13,7 @@ type Configuration struct {
 
 type API struct {
 	SamplePostRequestHandler handlers.SamplePostRequestHandlerImpl
-	CreateSingersHandler     handlers.CreateSingersHandlerImpl
+	CreateSingersHandler     create_singer_handler.CreateSingersHandlerImpl
 }
 
 func NewConfiguration() *Configuration {
@@ -21,7 +22,7 @@ func NewConfiguration() *Configuration {
 
 	// Register handlers
 	samplePostRequestHandler := handlers.NewSamplePostRequestHandler(validate)
-	createSingersRequestHandler := handlers.NewCreateSingersHandler(validate)
+	createSingersRequestHandler := create_singer_handler.NewCreateSingersHandler(validate)
 
 	return &Configuration{
 		Port: "8080",

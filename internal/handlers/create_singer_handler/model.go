@@ -1,4 +1,4 @@
-package create_singers_handler
+package create_singer_handler
 
 import (
 	"github.com/go-playground/validator/v10"

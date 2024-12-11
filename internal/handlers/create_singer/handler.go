@@ -2,7 +2,6 @@ package create_singer
 
 import (
 	"context"
-	"fmt"
 	"log"
 	"net/http"
 	"os"
@@ -42,25 +41,36 @@ func (c *CreateSingersHandlerImpl) CreateSingersHandler(w http.ResponseWriter, r
 	} else {
 		log.Println("Correct Request")
 
-		_, err = c.spannerClient.ReadWriteTransaction(c.ctx, func(ctx context.Context, txn *spanner.ReadWriteTransaction) error {
-			cols := []string{"SingerId", "FirstName", "LastName"}
-			err = txn.BufferWrite([]*spanner.Mutation{
-				spanner.InsertOrUpdate("Singers", cols, []interface{}{req.SingerId, req.Name, req.LastName}),
-			})
-
-			if err != nil {
-				log.Fatal(err)
-			}
-
-			fmt.Printf("Successfully upserted singer: %s\n", req.Name+" "+req.LastName)
-			return nil
-		})
+		res, err := c.UpsertSinger(req)
+		log.Printf("UpsertSinger returned: res=%s, err=%v", res, err)
 
 		if err != nil {
-			log.Fatal(err)
+			http.Error(w, err.Error(), http.StatusInternalServerError)
+			return
 		}
 
 		w.WriteHeader(http.StatusOK)
 		w.Write(body)
 	}
+}
+
+func (c *CreateSingersHandlerImpl) UpsertSinger(req CreateSingersRequest) (string, error) {
+	_, err := c.spannerClient.ReadWriteTransaction(c.ctx, func(ctx context.Context, txn *spanner.ReadWriteTransaction) error {
+		cols := []string{"SingerId", "FirstName", "LastName"}
+		err := txn.BufferWrite([]*spanner.Mutation{
+			spanner.InsertOrUpdate("Singers", cols, []interface{}{req.SingerId, req.Name, req.LastName}),
+		})
+
+		if err != nil {
+			return err
+		}
+
+		return nil
+	})
+
+	if err != nil {
+		return "", err
+	}
+
+	return "Successfully upserted singer: " + req.Name + " " + req.LastName, nil
 }

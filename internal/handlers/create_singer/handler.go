@@ -58,6 +58,7 @@ func (c *CreateSingersHandlerImpl) CreateSingersHandler(w http.ResponseWriter, r
 		log.Printf("UpsertSinger returned: res=%s, err=%v", res, err)
 
 		if err != nil {
+			log.Println("Upsert failed", err)
 			http.Error(w, err.Error(), http.StatusInternalServerError)
 			return
 		}

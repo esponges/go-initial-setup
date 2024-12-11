@@ -5,7 +5,6 @@ import (
 	"context"
 	"encoding/json"
 	"errors"
-	"fmt"
 	"net/http"
 	"net/http/httptest"
 	"testing"
@@ -97,7 +96,7 @@ func TestCreateSingersHandler(t *testing.T) {
 				return time.Time{}, errors.New("transaction failed")
 			},
 			expectedStatusCode: http.StatusInternalServerError,
-			expectedBody:       "transaction failed",
+			expectedBody:       "transaction failed\n",
 		},
 	}
 
@@ -150,14 +149,13 @@ func TestCreateSingersHandler(t *testing.T) {
 			responseBody := w.Body.String()
 			if tc.expectedStatusCode == http.StatusOK {
 				// For successful case, check the exact JSON
-				fmt.Println(responseBody)
 				if responseBody != tc.expectedBody {
 					t.Errorf("Expected body %s, got %s", tc.expectedBody, responseBody)
 				}
 			} else {
 				// For error cases, check error message
 				if responseBody != tc.expectedBody {
-					t.Errorf("Expected error message %s, got %s", tc.expectedBody, responseBody)
+					t.Errorf("Expected error message '%s', got '%s'", tc.expectedBody, responseBody)
 				}
 			}
 		})

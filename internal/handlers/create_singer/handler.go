@@ -5,15 +5,28 @@ import (
 	"log"
 	"net/http"
 	"os"
+	"time"
 
 	"cloud.google.com/go/spanner"
 	"github.com/esponges/initial-setup/internal/common"
 	"github.com/go-playground/validator/v10"
 )
 
+type SpannerClient interface {
+	ReadWriteTransaction(context.Context, func(context.Context, *spanner.ReadWriteTransaction) error) (time.Time, error)
+}
+
+type SpannerClientWrapper struct {
+	client *spanner.Client
+}
+
+func (s *SpannerClientWrapper) ReadWriteTransaction(ctx context.Context, f func(context.Context, *spanner.ReadWriteTransaction) error) (commitTimestamp time.Time, err error) {
+	return s.client.ReadWriteTransaction(ctx, f)
+}
+
 type CreateSingersHandlerImpl struct {
 	validator     *validator.Validate
-	spannerClient *spanner.Client
+	spannerClient SpannerClient
 	ctx           context.Context
 }
 

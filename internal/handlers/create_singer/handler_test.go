@@ -5,6 +5,7 @@ import (
 	"context"
 	"encoding/json"
 	"errors"
+	"fmt"
 	"net/http"
 	"net/http/httptest"
 	"testing"
@@ -82,7 +83,7 @@ func TestCreateSingersHandler(t *testing.T) {
 				return time.Now(), err
 			},
 			expectedStatusCode: http.StatusOK,
-			expectedBody:       `{"SingerId":"123","Name":"John","LastName":"Doe"}`,
+			expectedBody:       `{"singer_id":"123","name":"John","last_name":"Doe"}`,
 		},
 		{
 			name: "Transaction Failure",
@@ -149,6 +150,7 @@ func TestCreateSingersHandler(t *testing.T) {
 			responseBody := w.Body.String()
 			if tc.expectedStatusCode == http.StatusOK {
 				// For successful case, check the exact JSON
+				fmt.Println(responseBody)
 				if responseBody != tc.expectedBody {
 					t.Errorf("Expected body %s, got %s", tc.expectedBody, responseBody)
 				}

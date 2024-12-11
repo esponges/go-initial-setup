@@ -5,6 +5,7 @@ import (
 	"context"
 	"encoding/json"
 	"errors"
+	"fmt"
 	"net/http"
 	"net/http/httptest"
 	"testing"
@@ -53,12 +54,13 @@ func (m *mockSpannerClient) ReadWriteTransaction(ctx context.Context, f func(con
 // 	bufferWriteFunc func(mutations []*spanner.Mutation) error
 // }
 
-// func (m *mockReadWriteTransaction) BufferWrite(mutations []*spanner.Mutation) error {
-// 	if m.bufferWriteFunc != nil {
-// 		return m.bufferWriteFunc(mutations)
-// 	}
-// 	return nil
-// }
+//	func (m *mockReadWriteTransaction) BufferWrite(mutations []*spanner.Mutation) error {
+//		if m.bufferWriteFunc != nil {
+//			return m.bufferWriteFunc(mutations)
+//		}
+//		return nil
+//	}
+var count = 0
 
 // Test cases for CreateSingersHandler
 func TestCreateSingersHandler(t *testing.T) {
@@ -93,6 +95,7 @@ func TestCreateSingersHandler(t *testing.T) {
 			},
 			mockTransactionFn: func(ctx context.Context, f func(context.Context, *spanner.ReadWriteTransaction) error) (time.Time, error) {
 				// Simulate transaction failure
+				count++
 				return time.Time{}, errors.New("transaction failed")
 			},
 			expectedStatusCode: http.StatusInternalServerError,
@@ -125,6 +128,8 @@ func TestCreateSingersHandler(t *testing.T) {
 			if err != nil {
 				t.Fatalf("Failed to marshal request body: %v", err)
 			}
+
+			fmt.Println("attempts count: ", count)
 
 			// Create HTTP request
 			req, err := http.NewRequest("POST", "/create-singer", bytes.NewBuffer(jsonBody))

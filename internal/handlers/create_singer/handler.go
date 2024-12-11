@@ -69,22 +69,31 @@ func (c *CreateSingersHandlerImpl) CreateSingersHandler(w http.ResponseWriter, r
 }
 
 func (c *CreateSingersHandlerImpl) UpsertSinger(req CreateSingersRequest) (string, error) {
-	_, err := c.spannerClient.ReadWriteTransaction(c.ctx, func(ctx context.Context, txn *spanner.ReadWriteTransaction) error {
-		cols := []string{"SingerId", "FirstName", "LastName"}
-		err := txn.BufferWrite([]*spanner.Mutation{
-			spanner.InsertOrUpdate("Singers", cols, []interface{}{req.SingerId, req.Name, req.LastName}),
+	var lastErr error
+	for attempt := 0; attempt < 3; attempt++ {
+		_, txnErr := c.spannerClient.ReadWriteTransaction(c.ctx, func(ctx context.Context, txn *spanner.ReadWriteTransaction) error {
+			cols := []string{"SingerId", "FirstName", "LastName"}
+			err := txn.BufferWrite([]*spanner.Mutation{
+				spanner.InsertOrUpdate("Singers", cols, []interface{}{req.SingerId, req.Name, req.LastName}),
+			})
+
+			if err != nil {
+				log.Printf("Attempt %d: BufferWrite failed: %v", attempt+1, err)
+				return err // Return the error for retry logic
+			}
+
+			return nil // Successful write
 		})
 
-		if err != nil {
-			return err
+		if txnErr == nil {
+			return "Successfully upserted singer: " + req.Name + " " + req.LastName, nil
 		}
 
-		return nil
-	})
+		lastErr = txnErr
+		log.Printf("Attempt %d: Transaction failed: %v", attempt+1, txnErr)
 
-	if err != nil {
-		return "", err
+		// Optionally implement exponential backoff here before the next attempt
 	}
 
-	return "Successfully upserted singer: " + req.Name + " " + req.LastName, nil
+	return "", lastErr // Return the last encountered error after all attempts
 }

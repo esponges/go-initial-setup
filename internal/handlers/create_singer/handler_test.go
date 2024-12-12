@@ -5,7 +5,6 @@ import (
 	"context"
 	"encoding/json"
 	"errors"
-	"fmt"
 	"net/http"
 	"net/http/httptest"
 	"testing"
@@ -17,11 +16,13 @@ import (
 
 // Mock Spanner Client to fully implement the spanner.Client interface
 type mockSpannerClient struct {
+	callCount                int
 	readWriteTransactionFunc func(ctx context.Context, f func(context.Context, *spanner.ReadWriteTransaction) error) (time.Time, error)
 }
 
 // Implement methods required by spanner.Client interface
 func (m *mockSpannerClient) ReadWriteTransaction(ctx context.Context, f func(context.Context, *spanner.ReadWriteTransaction) error) (time.Time, error) {
+	m.callCount++
 	if m.readWriteTransactionFunc != nil {
 		return m.readWriteTransactionFunc(ctx, f)
 	}
@@ -60,7 +61,6 @@ func (m *mockSpannerClient) ReadWriteTransaction(ctx context.Context, f func(con
 //		}
 //		return nil
 //	}
-var count = 0
 
 // Test cases for CreateSingersHandler
 func TestCreateSingersHandler(t *testing.T) {
@@ -95,7 +95,6 @@ func TestCreateSingersHandler(t *testing.T) {
 			},
 			mockTransactionFn: func(ctx context.Context, f func(context.Context, *spanner.ReadWriteTransaction) error) (time.Time, error) {
 				// Simulate transaction failure
-				count++
 				return time.Time{}, errors.New("transaction failed")
 			},
 			expectedStatusCode: http.StatusInternalServerError,
@@ -128,8 +127,6 @@ func TestCreateSingersHandler(t *testing.T) {
 			if err != nil {
 				t.Fatalf("Failed to marshal request body: %v", err)
 			}
-
-			fmt.Println("attempts count: ", count)
 
 			// Create HTTP request
 			req, err := http.NewRequest("POST", "/create-singer", bytes.NewBuffer(jsonBody))
@@ -240,5 +237,32 @@ func TestUpsertSinger(t *testing.T) {
 				}
 			}
 		})
+	}
+}
+
+func TestUpsertSinger_Retry(t *testing.T) {
+	mockClient := &mockSpannerClient{
+		readWriteTransactionFunc: func(ctx context.Context, f func(context.Context, *spanner.ReadWriteTransaction) error) (time.Time, error) {
+			return time.Time{}, errors.New("upsert failed")
+		},
+	}
+
+	handler := &CreateSingersHandlerImpl{
+		spannerClient: mockClient,
+		ctx:           context.Background(),
+	}
+
+	_, err := handler.UpsertSinger(CreateSingersRequest{
+		SingerId: "123",
+		Name:     "John",
+		LastName: "Doe",
+	})
+
+	if err == nil {
+		t.Errorf("Expected an error, got nil")
+	}
+
+	if mockClient.callCount != 3 {
+		t.Errorf("Expected ReadWriteTransaction to be called 3 times, got %d", mockClient.callCount)
 	}
 }

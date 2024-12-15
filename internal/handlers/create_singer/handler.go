@@ -64,6 +64,12 @@ func getSingerScore(scores chan float64, wg *sync.WaitGroup, callCount int) (flo
 		}()
 	}
 
+	// dont forget to close and wait channels
+	go func() {
+		wg.Wait()
+		close(scores)
+	}()
+
 	// get highest score
 	score := 0.0
 	for s := range scores {

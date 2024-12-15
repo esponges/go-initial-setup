@@ -65,7 +65,7 @@ func (c *CreateSingersHandlerImpl) CreateSingersHandler(w http.ResponseWriter, r
 	} else {
 		log.Println("Correct Request")
 
-		scores := make(chan float64)
+		scores := make(chan float64, 10) // use buffered channel for concurrency
 		var wg sync.WaitGroup
 
 		for i := 0; i < 10; i++ {

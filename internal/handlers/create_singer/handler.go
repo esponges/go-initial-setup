@@ -3,8 +3,11 @@ package create_singer
 import (
 	"context"
 	"log"
+	"math"
+	"math/rand"
 	"net/http"
 	"os"
+	"sync"
 	"time"
 
 	"cloud.google.com/go/spanner"
@@ -45,6 +48,14 @@ func NewCreateSingersHandler(validator *validator.Validate) *CreateSingersHandle
 	}
 }
 
+func getSingerScore() (float64, error) {
+	time.Sleep(1000)
+
+	score := math.Floor(rand.Float64() * 100)
+
+	return score, nil
+}
+
 func (c *CreateSingersHandlerImpl) CreateSingersHandler(w http.ResponseWriter, r *http.Request) {
 	var req CreateSingersRequest
 	body, err := common.UnmarshalAndValidateRequest(r, &req, c.validator)
@@ -53,6 +64,24 @@ func (c *CreateSingersHandlerImpl) CreateSingersHandler(w http.ResponseWriter, r
 		w.Write([]byte("Bad Request"))
 	} else {
 		log.Println("Correct Request")
+
+		scores := make(chan float64)
+		var wg sync.WaitGroup
+
+		for i := 0; i < 10; i++ {
+			wg.Add(1)
+			go func() {
+				defer wg.Done()
+				score, _ := getSingerScore()
+				scores <- score
+			}()
+		}
+
+		// Close the channel after all scores have been received
+		go func() {
+			wg.Wait()
+			close(scores)
+		}()
 
 		res, err := c.UpsertSinger(req)
 		log.Printf("UpsertSinger returned: res=%s, err=%v", res, err)

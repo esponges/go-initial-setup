@@ -48,10 +48,29 @@ func NewCreateSingersHandler(validator *validator.Validate) *CreateSingersHandle
 	}
 }
 
-func getSingerScore() (float64, error) {
+func getSingerScore(scores chan float64, wg *sync.WaitGroup, callCount int) (float64, error) {
 	time.Sleep(1000)
 
-	score := math.Floor(rand.Float64() * 100)
+	if callCount <= 0 {
+		return 0.0, nil
+	}
+
+	for i := 0; i < callCount; i++ {
+		wg.Add(1)
+		go func() {
+			defer wg.Done()
+			score := math.Floor(rand.Float64() * 100)
+			scores <- score
+		}()
+	}
+
+	// get highest score
+	score := 0.0
+	for s := range scores {
+		if s > score {
+			score = s
+		}
+	}
 
 	return score, nil
 }
@@ -65,23 +84,16 @@ func (c *CreateSingersHandlerImpl) CreateSingersHandler(w http.ResponseWriter, r
 	} else {
 		log.Println("Correct Request")
 
-		scores := make(chan float64, 10) // use buffered channel for concurrency
+		buffer := 10
+		scores := make(chan float64, buffer) // use buffered channel for concurrency
 		var wg sync.WaitGroup
-
-		for i := 0; i < 10; i++ {
-			wg.Add(1)
-			go func() {
-				defer wg.Done()
-				score, _ := getSingerScore()
-				scores <- score
-			}()
+		highestScore, err := getSingerScore(scores, &wg, buffer)
+		if err != nil {
+			log.Println("getSingerScore failed", err)
+			http.Error(w, err.Error(), http.StatusInternalServerError)
+			return
 		}
-
-		// Close the channel after all scores have been received
-		go func() {
-			wg.Wait()
-			close(scores)
-		}()
+		log.Printf("getSingerScore returned: highestScore=%f, err=%v", highestScore, err)
 
 		res, err := c.UpsertSinger(req)
 		log.Printf("UpsertSinger returned: res=%s, err=%v", res, err)
